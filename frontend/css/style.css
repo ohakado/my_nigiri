@@ -1,0 +1,198 @@
+/* リセット・ベース */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: #2c1810; color: #333; min-height: 100vh; }
+
+/* レイアウト */
+.app-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+header { text-align: center; color: #f5deb3; padding: 20px 0; }
+header h1 { font-size: 2rem; }
+header nav a { color: #f5deb3; margin: 0 10px; text-decoration: none; }
+header nav a:hover { text-decoration: underline; }
+
+.game-area { display: flex; gap: 20px; align-items: flex-start; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
+
+/* 駒パレット */
+.piece-palette {
+  background: #8b6914;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 120px;
+}
+.piece-palette h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
+.palette-section { margin-bottom: 12px; }
+.palette-section label { color: #ddd; font-size: 0.8rem; display: block; margin-bottom: 4px; }
+.palette-pieces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.palette-piece {
+  width: 36px; height: 36px;
+  background: #f5deb3;
+  border: 1px solid #8b7355;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  user-select: none;
+  transition: background 0.15s;
+}
+.palette-piece:hover { background: #ffe4b5; }
+.palette-piece.defender-piece { transform: rotate(180deg); background: #ffc0cb; }
+.palette-piece.selected { outline: 3px solid #0066cc; }
+
+/* 将棋盤 */
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.board-container { position: relative; }
+.file-labels { display: flex; justify-content: flex-end; padding-right: 24px; }
+.file-label { width: 60px; text-align: center; color: #f5deb3; font-size: 0.8rem; }
+.board-with-ranks { display: flex; align-items: flex-start; }
+.rank-labels { display: flex; flex-direction: column; padding-top: 0; }
+.rank-label { height: 60px; display: flex; align-items: center; color: #f5deb3; font-size: 0.8rem; padding-left: 4px; }
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(9, 60px);
+  grid-template-rows: repeat(9, 60px);
+  border: 2px solid #5c3d1e;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.cell {
+  width: 60px; height: 60px;
+  background: #f5deb3;
+  border: 1px solid #8b7355;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.1s;
+}
+.cell:hover { background: #ffe4b5; }
+.cell.enemy-zone { background: #ffe8e8; }  /* 攻め方の敵陣（row 0-2）*/
+.cell.selected-cell { background: #90ee90; outline: 2px solid #006400; }
+.cell.move-target { background: #87ceeb; }
+.cell.last-move { background: #ffff90; }
+
+/* 駒 */
+.piece {
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  /* 五角形っぽい将棋駒の形 */
+  clip-path: polygon(50% 0%, 100% 25%, 100% 100%, 0% 100%, 0% 25%);
+  background: #f5deb3;
+  border: 1px solid #8b7355;
+}
+.piece.attacker { color: #1a1a1a; }
+.piece.defender { color: #1a1a1a; transform: rotate(180deg); }
+.piece.promoted { color: #cc0000; }
+
+/* 持ち駒 */
+.hand-area {
+  background: #8b6914;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 120px;
+  min-height: 200px;
+}
+.hand-area h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
+.hand-pieces-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.hand-piece {
+  width: 36px; height: 36px;
+  background: #f5deb3;
+  border: 1px solid #8b7355;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  position: relative;
+}
+.hand-piece .count {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 0.6rem;
+  color: #555;
+}
+
+/* コントロール */
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0;
+}
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.85; }
+#solve-btn { background: #cc7700; color: white; }
+#clear-btn { background: #666; color: white; }
+#submit-btn { background: #006600; color: white; }
+#submit-btn:disabled { background: #999; cursor: not-allowed; }
+
+/* 探索状態 */
+#solve-status { text-align: center; color: #f5deb3; min-height: 2rem; font-size: 0.95rem; }
+.solving { animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* 投稿フォーム */
+.submit-form {
+  max-width: 400px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 16px;
+}
+.submit-form input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+.submit-form label { color: #f5deb3; display: block; margin-bottom: 4px; }
+
+/* 結果エリア */
+#result-area { margin: 16px 0; min-height: 60px; }
+.result-card { border-radius: 8px; padding: 16px; text-align: center; }
+.result-card.success { background: #e8f5e9; color: #1b5e20; }
+.result-card.error { background: #ffebee; color: #b71c1c; }
+.result-card h2 { margin-bottom: 8px; }
+.result-card p { margin: 4px 0; }
+
+/* 解の手順表示 */
+#solution-display {
+  background: rgba(0,0,0,0.3);
+  color: #f5deb3;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+/* ランキングページ */
+.ranking-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.ranking-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.ranking-table th { background: #5c3d1e; color: white; padding: 12px; text-align: left; }
+.ranking-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+.ranking-table tr:nth-child(even) td { background: #f9f9f9; }
+.rank-1 td { background: #fff9c4 !important; font-weight: bold; }
+.rank-2 td { background: #f5f5f5 !important; }
+.rank-3 td { background: #fce4ec !important; }

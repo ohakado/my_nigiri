@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランキング - 握り詰め</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.0" defer></script>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>握り詰め</h1>
+      <nav>
+        <a href="/">作成</a>
+        <a href="/ranking">ランキング</a>
+      </nav>
+    </header>
+
+    <div class="ranking-container">
+      <h2 style="color: #f5deb3; text-align:center; margin-bottom: 16px;">🏆 ランキング</h2>
+
+      <!-- HTMXでランキングを自動ロード -->
+      <div hx-get="/api/ranking/html"
+           hx-trigger="load"
+           hx-target="this"
+           hx-swap="innerHTML">
+        <p style="color:#f5deb3; text-align:center;">読み込み中...</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

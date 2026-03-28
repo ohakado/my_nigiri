@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>握り詰め - 詰将棋作成ゲーム</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.0" defer></script>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>握り詰め</h1>
+      <p>詰将棋を作って投稿しよう（最大9手）</p>
+      <nav>
+        <a href="/">作成</a>
+        <a href="/ranking">ランキング</a>
+      </nav>
+    </header>
+
+    <!-- ゲームエリア -->
+    <div class="game-area">
+      <!-- 駒パレット -->
+      <div class="piece-palette">
+        <h3>駒パレット</h3>
+        <div class="palette-section">
+          <label>▲ 攻め方</label>
+          <div class="palette-pieces" id="palette-attacker"></div>
+        </div>
+        <div class="palette-section">
+          <label>△ 受け方</label>
+          <div class="palette-pieces" id="palette-defender"></div>
+        </div>
+        <hr style="border-color:#a08040; margin: 8px 0;">
+        <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
+          クリック→盤面クリックで配置<br>
+          右クリックで駒削除
+        </p>
+      </div>
+
+      <!-- 将棋盤 -->
+      <div class="board-wrapper">
+        <!-- 筋ラベル（9〜1） -->
+        <div class="file-labels">
+          <div class="file-label">9</div>
+          <div class="file-label">8</div>
+          <div class="file-label">7</div>
+          <div class="file-label">6</div>
+          <div class="file-label">5</div>
+          <div class="file-label">4</div>
+          <div class="file-label">3</div>
+          <div class="file-label">2</div>
+          <div class="file-label">1</div>
+        </div>
+        <div class="board-with-ranks">
+          <!-- 段ラベルを後で追加するため空 -->
+          <div class="rank-labels" id="rank-labels">
+            <div class="rank-label">一</div>
+            <div class="rank-label">二</div>
+            <div class="rank-label">三</div>
+            <div class="rank-label">四</div>
+            <div class="rank-label">五</div>
+            <div class="rank-label">六</div>
+            <div class="rank-label">七</div>
+            <div class="rank-label">八</div>
+            <div class="rank-label">九</div>
+          </div>
+          <div id="board"></div>
+        </div>
+      </div>
+
+      <!-- 持ち駒エリア（攻め方） -->
+      <div class="hand-area">
+        <h3>▲ 持ち駒</h3>
+        <div class="hand-pieces-grid" id="hand-pieces-attacker"></div>
+        <hr style="border-color:#a08040; margin: 8px 0;">
+        <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
+          持ち駒をクリック→<br>盤面に打てます
+        </p>
+      </div>
+    </div>
+
+    <!-- 操作エリア -->
+    <div class="controls">
+      <button id="solve-btn">🔍 詰みを確認</button>
+      <button id="clear-btn">🗑 クリア</button>
+    </div>
+
+    <div id="solve-status"></div>
+    <div id="solution-display"></div>
+
+    <!-- 投稿フォーム -->
+    <div class="submit-form">
+      <form id="submit-form"
+            hx-post="/api/submit"
+            hx-target="#result-area"
+            hx-swap="innerHTML">
+        <label for="player-name">投稿者名（任意）</label>
+        <input type="text" id="player-name" name="player_name" placeholder="匿名" maxlength="20">
+        <input type="hidden" id="input-board-sfen" name="board_sfen">
+        <input type="hidden" id="input-solution-moves" name="solution_moves">
+        <input type="hidden" id="input-moves-count" name="moves_count">
+        <button type="submit" id="submit-btn" disabled>📮 投稿する</button>
+      </form>
+    </div>
+
+    <div id="result-area"></div>
+  </div>
+
+  <script type="module" src="/static/js/board_ui.js"></script>
+</body>
+</html>
