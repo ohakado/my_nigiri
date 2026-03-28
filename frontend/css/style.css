@@ -187,6 +187,62 @@ button:hover { opacity: 0.85; }
   overflow-y: auto;
 }
 
+/* ティア選択画面 */
+#tier-select-screen { display: flex; justify-content: center; padding: 40px 20px; }
+.tier-select-container { text-align: center; }
+.tier-select-container h2 { color: #f5deb3; font-size: 1.6rem; margin-bottom: 8px; }
+.tier-desc { color: #ccc; margin-bottom: 32px; }
+.tier-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.tier-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 20px 28px;
+  border: 3px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  min-width: 160px;
+}
+.tier-btn:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+.tier1-btn { background: #4a7c59; border-color: #6abf7b; color: white; }
+.tier2-btn { background: #7c5a1e; border-color: #f0a830; color: white; }
+.tier3-btn { background: #7c1e1e; border-color: #e05050; color: white; }
+.tier-name { font-size: 1.3rem; font-weight: bold; }
+.tier-range { font-size: 0.85rem; opacity: 0.9; }
+.tier-bonus-label { font-size: 0.8rem; opacity: 0.8; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; }
+
+/* ティア情報バー */
+.tier-info-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  color: #f5deb3;
+  font-weight: bold;
+}
+.small-btn {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.15);
+  color: #f5deb3;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+}
+.small-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* 玉マス（ロック済み） */
+.cell.king-cell { background: #ffe0b0 !important; cursor: not-allowed; }
+.cell.king-cell:hover { background: #ffe0b0 !important; }
+
+/* ティアバッジ（ランキング） */
+.tier-badge {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 10px; font-size: 0.8rem; font-weight: bold; color: white;
+}
+.tier-badge.tier1 { background: #4a7c59; }
+.tier-badge.tier2 { background: #b07820; }
+.tier-badge.tier3 { background: #9c2020; }
+
 /* ランキングページ */
 .ranking-container { max-width: 800px; margin: 0 auto; padding: 20px; }
 .ranking-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }

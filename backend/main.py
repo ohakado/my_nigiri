@@ -70,11 +70,16 @@ def ranking_page():
 # API: 問題投稿
 # --------------------------------------------------------------------------
 
+TIER_BONUS = {1: 0, 2: 30, 3: 70}
+TIER_LABEL = {1: "ティア1", 2: "ティア2", 3: "ティア3"}
+
+
 @app.post("/api/submit", response_class=HTMLResponse)
 def submit_puzzle(
     board_sfen: str = Form(...),
     solution_moves: str = Form(...),   # JSON文字列
     moves_count: int = Form(...),
+    tier: int = Form(default=1),
     player_name: Optional[str] = Form(default="匿名"),
     session: Session = Depends(get_session),
 ):
@@ -115,18 +120,20 @@ def submit_puzzle(
     # 4. スコア計算
     move_score = moves_count * 10
     efficiency_bonus = max(0, (16 - attacker_piece_count) * 5)
+    tier_bonus = TIER_BONUS.get(tier, 0)
     from sqlmodel import select as sql_select
     existing = session.exec(
         sql_select(Puzzle).where(Puzzle.board_sfen == board_sfen)
     ).first()
     uniqueness_bonus = 0 if existing else 50
-    score = move_score + efficiency_bonus + uniqueness_bonus
+    score = move_score + efficiency_bonus + tier_bonus + uniqueness_bonus
 
     # 5. DB保存
     puzzle = Puzzle(
         board_sfen=board_sfen,
         solution_moves=json.dumps(solution_moves_list, ensure_ascii=False),
         moves_count=moves_count,
+        tier=tier,
         score=score,
         attacker_piece_count=attacker_piece_count,
         player_name=player_name,
@@ -139,9 +146,11 @@ def submit_puzzle(
     return HTMLResponse(
         content=f"""<div class="result-card success">
   <h2>🎉 登録完了！</h2>
-  <p>{moves_count}手詰め</p>
-  <p>スコア: {score}点</p>
-  <p>内訳: 手数{move_score} + 効率{efficiency_bonus} + ユニーク{uniqueness_bonus}</p>
+  <p>{TIER_LABEL.get(tier, '')} / {moves_count}手詰め</p>
+  <p>スコア: <strong>{score}点</strong></p>
+  <p style="font-size:0.85rem; color:#555;">
+    手数 {move_score} + 効率 {efficiency_bonus} + ティア {tier_bonus} + ユニーク {uniqueness_bonus}
+  </p>
 </div>""",
         status_code=200,
     )
@@ -188,14 +197,17 @@ def get_ranking_html(session: Session = Depends(get_session)):
     if not puzzles:
         return HTMLResponse(content='<p style="text-align:center; color:#888;">まだ投稿がありません</p>')
 
+    tier_labels = {1: "T1", 2: "T2", 3: "T3"}
     rows = ""
     for i, p in enumerate(puzzles, start=1):
         rank_class = f"rank-{i}" if i <= 3 else ""
         medal = ["🥇", "🥈", "🥉"][i - 1] if i <= 3 else str(i)
+        tlabel = tier_labels.get(p.tier, f"T{p.tier}")
         rows += f"""
         <tr class="{rank_class}">
           <td>{medal}</td>
           <td>{p.player_name}</td>
+          <td><span class="tier-badge tier{p.tier}">{tlabel}</span></td>
           <td>{p.moves_count}手詰め</td>
           <td>{p.score}点</td>
           <td>{p.created_at.strftime('%Y-%m-%d %H:%M')}</td>
@@ -207,6 +219,7 @@ def get_ranking_html(session: Session = Depends(get_session)):
     <tr>
       <th>順位</th>
       <th>投稿者</th>
+      <th>ティア</th>
       <th>手数</th>
       <th>スコア</th>
       <th>投稿日時</th>

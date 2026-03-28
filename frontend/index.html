@@ -20,93 +20,132 @@
       </nav>
     </header>
 
-    <!-- ゲームエリア -->
-    <div class="game-area">
-      <!-- 駒パレット -->
-      <div class="piece-palette">
-        <h3>駒パレット</h3>
-        <div class="palette-section">
-          <label>▲ 攻め方</label>
-          <div class="palette-pieces" id="palette-attacker"></div>
+    <!-- ========== ティア選択画面 ========== -->
+    <div id="tier-select-screen">
+      <div class="tier-select-container">
+        <h2>ティアを選択してください</h2>
+        <p class="tier-desc">相手玉の配置範囲を選びます。ティアが高いほど難しく、高得点！</p>
+        <div class="tier-buttons">
+          <button class="tier-btn tier1-btn" data-tier="1">
+            <span class="tier-name">ティア1</span>
+            <span class="tier-range">玉の位置：1〜3段目</span>
+            <span class="tier-bonus-label">ボーナス +0点</span>
+          </button>
+          <button class="tier-btn tier2-btn" data-tier="2">
+            <span class="tier-name">ティア2</span>
+            <span class="tier-range">玉の位置：1〜6段目</span>
+            <span class="tier-bonus-label">ボーナス +30点</span>
+          </button>
+          <button class="tier-btn tier3-btn" data-tier="3">
+            <span class="tier-name">ティア3</span>
+            <span class="tier-range">玉の位置：1〜9段目</span>
+            <span class="tier-bonus-label">ボーナス +70点</span>
+          </button>
         </div>
-        <div class="palette-section">
-          <label>△ 受け方</label>
-          <div class="palette-pieces" id="palette-defender"></div>
+      </div>
+    </div>
+
+    <!-- ========== ゲーム画面 ========== -->
+    <div id="game-screen" style="display:none;">
+
+      <!-- ティア情報バー -->
+      <div class="tier-info-bar">
+        <span id="current-tier-label"></span>
+        <div style="display:flex; gap:8px;">
+          <button id="reroll-btn" class="small-btn">🎲 玉を再配置</button>
+          <button id="change-tier-btn" class="small-btn">↩ ティア変更</button>
         </div>
-        <hr style="border-color:#a08040; margin: 8px 0;">
-        <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
-          クリック→盤面クリックで配置<br>
-          右クリックで駒削除
-        </p>
       </div>
 
-      <!-- 将棋盤 -->
-      <div class="board-wrapper">
-        <!-- 筋ラベル（9〜1） -->
-        <div class="file-labels">
-          <div class="file-label">9</div>
-          <div class="file-label">8</div>
-          <div class="file-label">7</div>
-          <div class="file-label">6</div>
-          <div class="file-label">5</div>
-          <div class="file-label">4</div>
-          <div class="file-label">3</div>
-          <div class="file-label">2</div>
-          <div class="file-label">1</div>
-        </div>
-        <div class="board-with-ranks">
-          <!-- 段ラベルを後で追加するため空 -->
-          <div class="rank-labels" id="rank-labels">
-            <div class="rank-label">一</div>
-            <div class="rank-label">二</div>
-            <div class="rank-label">三</div>
-            <div class="rank-label">四</div>
-            <div class="rank-label">五</div>
-            <div class="rank-label">六</div>
-            <div class="rank-label">七</div>
-            <div class="rank-label">八</div>
-            <div class="rank-label">九</div>
+      <!-- ゲームエリア -->
+      <div class="game-area">
+        <!-- 駒パレット -->
+        <div class="piece-palette">
+          <h3>駒パレット</h3>
+          <div class="palette-section">
+            <label>▲ 攻め方</label>
+            <div class="palette-pieces" id="palette-attacker"></div>
           </div>
-          <div id="board"></div>
+          <div class="palette-section">
+            <label>△ 受け方（玉以外）</label>
+            <div class="palette-pieces" id="palette-defender"></div>
+          </div>
+          <hr style="border-color:#a08040; margin: 8px 0;">
+          <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
+            クリック→盤面クリックで配置<br>
+            右クリックで駒削除<br>
+            <span style="color:#ffdd88;">👑 玉は移動不可</span>
+          </p>
+        </div>
+
+        <!-- 将棋盤 -->
+        <div class="board-wrapper">
+          <div class="file-labels">
+            <div class="file-label">9</div>
+            <div class="file-label">8</div>
+            <div class="file-label">7</div>
+            <div class="file-label">6</div>
+            <div class="file-label">5</div>
+            <div class="file-label">4</div>
+            <div class="file-label">3</div>
+            <div class="file-label">2</div>
+            <div class="file-label">1</div>
+          </div>
+          <div class="board-with-ranks">
+            <div class="rank-labels">
+              <div class="rank-label">一</div>
+              <div class="rank-label">二</div>
+              <div class="rank-label">三</div>
+              <div class="rank-label">四</div>
+              <div class="rank-label">五</div>
+              <div class="rank-label">六</div>
+              <div class="rank-label">七</div>
+              <div class="rank-label">八</div>
+              <div class="rank-label">九</div>
+            </div>
+            <div id="board"></div>
+          </div>
+        </div>
+
+        <!-- 持ち駒エリア（攻め方） -->
+        <div class="hand-area">
+          <h3>▲ 持ち駒</h3>
+          <div class="hand-pieces-grid" id="hand-pieces-attacker"></div>
+          <hr style="border-color:#a08040; margin: 8px 0;">
+          <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
+            持ち駒をクリック→<br>盤面に打てます
+          </p>
         </div>
       </div>
 
-      <!-- 持ち駒エリア（攻め方） -->
-      <div class="hand-area">
-        <h3>▲ 持ち駒</h3>
-        <div class="hand-pieces-grid" id="hand-pieces-attacker"></div>
-        <hr style="border-color:#a08040; margin: 8px 0;">
-        <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
-          持ち駒をクリック→<br>盤面に打てます
-        </p>
+      <!-- 操作エリア -->
+      <div class="controls">
+        <button id="solve-btn">🔍 詰みを確認</button>
+        <button id="clear-btn">🗑 攻め駒クリア</button>
       </div>
-    </div>
 
-    <!-- 操作エリア -->
-    <div class="controls">
-      <button id="solve-btn">🔍 詰みを確認</button>
-      <button id="clear-btn">🗑 クリア</button>
-    </div>
+      <div id="solve-status"></div>
+      <div id="solution-display"></div>
 
-    <div id="solve-status"></div>
-    <div id="solution-display"></div>
+      <!-- 投稿フォーム -->
+      <div class="submit-form">
+        <form id="submit-form"
+              hx-post="/api/submit"
+              hx-target="#result-area"
+              hx-swap="innerHTML">
+          <label for="player-name">投稿者名（任意）</label>
+          <input type="text" id="player-name" name="player_name" placeholder="匿名" maxlength="20">
+          <input type="hidden" id="input-board-sfen" name="board_sfen">
+          <input type="hidden" id="input-solution-moves" name="solution_moves">
+          <input type="hidden" id="input-moves-count" name="moves_count">
+          <input type="hidden" id="input-tier" name="tier">
+          <button type="submit" id="submit-btn" disabled>📮 投稿する</button>
+        </form>
+      </div>
 
-    <!-- 投稿フォーム -->
-    <div class="submit-form">
-      <form id="submit-form"
-            hx-post="/api/submit"
-            hx-target="#result-area"
-            hx-swap="innerHTML">
-        <label for="player-name">投稿者名（任意）</label>
-        <input type="text" id="player-name" name="player_name" placeholder="匿名" maxlength="20">
-        <input type="hidden" id="input-board-sfen" name="board_sfen">
-        <input type="hidden" id="input-solution-moves" name="solution_moves">
-        <input type="hidden" id="input-moves-count" name="moves_count">
-        <button type="submit" id="submit-btn" disabled>📮 投稿する</button>
-      </form>
-    </div>
+      <div id="result-area"></div>
 
-    <div id="result-area"></div>
+    </div><!-- /game-screen -->
   </div>
 
   <script type="module" src="/static/js/board_ui.js"></script>

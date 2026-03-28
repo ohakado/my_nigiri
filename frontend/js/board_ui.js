@@ -1,23 +1,31 @@
 import { ShogiBoard, PIECES, PROMOTED, IS_PROMOTED, CAN_PROMOTE } from './shogi.js';
 
-// 盤面の状態
+// ティアごとに玉を配置できる row の最大値
+// row 0 = 1段目, row 2 = 3段目, row 5 = 6段目, row 8 = 9段目
+const TIER_MAX_ROW = { 1: 2, 2: 5, 3: 8 };
+const TIER_BONUS   = { 1: 0, 2: 30, 3: 70 };
+const TIER_LABEL   = { 1: 'ティア1（1〜3段目）', 2: 'ティア2（1〜6段目）', 3: 'ティア3（1〜9段目）' };
+
+// アプリ全体の状態
 const state = {
   board: new ShogiBoard(),
-  selectedPalettePiece: null,  // {piece, owner} | null
-  selectedCell: null,           // {row, col} | null  (盤上の駒を選択)
-  selectedHandPiece: null,      // {piece} | null (持ち駒を選択)
-  solution: null,               // 探索結果 [{move...}] | null
-  solveStatus: 'idle',          // 'idle' | 'solving' | 'found' | 'not_found'
+  tier: null,              // 1 | 2 | 3
+  kingPos: null,           // {row, col} — ランダム配置後ロック
+  selectedPalettePiece: null,
+  selectedCell: null,
+  selectedHandPiece: null,
+  solution: null,
+  solveStatus: 'idle',     // 'idle' | 'solving' | 'found' | 'not_found'
   worker: null,
 };
 
-// 初期化
+// ========== 初期化 ==========
+
 export function init() {
-  renderBoard();
   renderPalette();
-  renderHands();
-  attachEventListeners();
   createWorker();
+  attachEventListeners();
+  showTierSelect();          // 最初はティア選択画面を表示
 }
 
 function createWorker() {
@@ -39,7 +47,65 @@ function createWorker() {
   };
 }
 
-// 盤面描画
+// ========== ティア選択 ==========
+
+function showTierSelect() {
+  document.getElementById('tier-select-screen').style.display = 'block';
+  document.getElementById('game-screen').style.display = 'none';
+}
+
+function startGame(tier) {
+  state.tier = tier;
+  state.board = new ShogiBoard();
+  placeKingRandomly(tier);
+
+  document.getElementById('tier-select-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  document.getElementById('current-tier-label').textContent = TIER_LABEL[tier];
+
+  onBoardChanged();
+}
+
+// ========== 玉のランダム配置 ==========
+
+function placeKingRandomly(tier) {
+  const maxRow = TIER_MAX_ROW[tier];
+  // 空きマスに玉を置く（最大100回リトライ）
+  for (let i = 0; i < 100; i++) {
+    const row = Math.floor(Math.random() * (maxRow + 1));
+    const col = Math.floor(Math.random() * 9);
+    if (!state.board.board[row][col]) {
+      state.board.board[row][col] = { piece: 'OU', owner: 'defender' };
+      state.kingPos = { row, col };
+      return;
+    }
+  }
+}
+
+function rerollKing() {
+  if (!state.tier) return;
+  // 盤上の attacker 駒は保持、defender の玉だけ再配置
+  if (state.kingPos) {
+    state.board.board[state.kingPos.row][state.kingPos.col] = null;
+  }
+  // defender の全駒を削除してから玉を再配置
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (state.board.board[r][c]?.owner === 'defender') {
+        state.board.board[r][c] = null;
+      }
+    }
+  }
+  placeKingRandomly(state.tier);
+  onBoardChanged();
+}
+
+function isKingCell(row, col) {
+  return state.kingPos && state.kingPos.row === row && state.kingPos.col === col;
+}
+
+// ========== 盤面描画 ==========
+
 function renderBoard() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
@@ -50,10 +116,9 @@ function renderBoard() {
       cell.dataset.row = row;
       cell.dataset.col = col;
 
-      // 敵陣ハイライト（攻め方の成り可能ゾーン row 0-2）
       if (row <= 2) cell.classList.add('enemy-zone');
+      if (isKingCell(row, col)) cell.classList.add('king-cell');
 
-      // セル内の駒
       const piece = state.board.board[row][col];
       if (piece) {
         cell.appendChild(createPieceEl(piece.piece, piece.owner));
@@ -66,20 +131,19 @@ function renderBoard() {
   }
 }
 
-// 駒要素を作成
 function createPieceEl(piece, owner) {
   const el = document.createElement('div');
   el.className = `piece ${owner}`;
   if (IS_PROMOTED.has(piece)) el.classList.add('promoted');
-  // 駒名表示: 通常駒は漢字1文字、成り駒は2文字
   el.textContent = PIECES[piece];
   return el;
 }
 
-// パレット描画（攻め方の駒一覧）
+// ========== 駒パレット ==========
+
 function renderPalette() {
-  // 攻め方パレット
-  const attackerPieces = ['FU','KY','KE','GI','KI','KA','HI','OU','TO','NY','NK','NG','UM','RY'];
+  // 攻め方パレット（OU除く — 問題上ありえるが通常は不要）
+  const attackerPieces = ['FU','KY','KE','GI','KI','KA','HI','TO','NY','NK','NG','UM','RY'];
   const attackerGrid = document.getElementById('palette-attacker');
   attackerGrid.innerHTML = '';
   for (const piece of attackerPieces) {
@@ -91,8 +155,8 @@ function renderPalette() {
     attackerGrid.appendChild(el);
   }
 
-  // 守り方パレット（玉のみ + 配置可能な駒）
-  const defenderPieces = ['FU','KY','KE','GI','KI','KA','HI','OU'];
+  // 受け方パレット（玉除く — 玉はランダム配置済み）
+  const defenderPieces = ['FU','KY','KE','GI','KI','KA','HI'];
   const defenderGrid = document.getElementById('palette-defender');
   defenderGrid.innerHTML = '';
   for (const piece of defenderPieces) {
@@ -105,7 +169,6 @@ function renderPalette() {
   }
 }
 
-// パレットの駒を選択
 function selectPalettePiece(piece, owner) {
   state.selectedPalettePiece = { piece, owner };
   state.selectedCell = null;
@@ -113,7 +176,8 @@ function selectPalettePiece(piece, owner) {
   updateSelectionHighlight();
 }
 
-// 持ち駒エリア描画
+// ========== 持ち駒 ==========
+
 function renderHands() {
   const handEl = document.getElementById('hand-pieces-attacker');
   handEl.innerHTML = '';
@@ -128,11 +192,9 @@ function renderHands() {
     countEl.className = 'count';
     countEl.textContent = count > 0 ? count : '';
     el.appendChild(countEl);
+    el.style.opacity = count > 0 ? '1' : '0.3';
     if (count > 0) {
-      el.style.opacity = '1';
       el.addEventListener('click', () => selectHandPiece(piece));
-    } else {
-      el.style.opacity = '0.3';
     }
     handEl.appendChild(el);
   }
@@ -145,19 +207,25 @@ function selectHandPiece(piece) {
   updateSelectionHighlight();
 }
 
-// セルクリック処理
+// ========== セルクリック ==========
+
 function onCellClick(row, col) {
+  // 玉マスへの上書き・移動は禁止
+  if (isKingCell(row, col) && !state.selectedCell) {
+    // 玉マス自体を選択しようとした場合も何もしない
+    state.selectedPalettePiece = null;
+    state.selectedHandPiece = null;
+    return;
+  }
+
   const currentPiece = state.board.board[row][col];
 
-  // パレットから駒を配置
+  // パレットから配置
   if (state.selectedPalettePiece) {
-    // 既存の駒は削除して新しい駒を配置（上書き）
-    if (currentPiece) {
-      // 盤から取り除く（持ち駒には加えない）
-    }
+    if (isKingCell(row, col)) return; // 玉マスには置けない
     state.board.board[row][col] = {
       piece: state.selectedPalettePiece.piece,
-      owner: state.selectedPalettePiece.owner
+      owner: state.selectedPalettePiece.owner,
     };
     onBoardChanged();
     return;
@@ -177,15 +245,23 @@ function onCellClick(row, col) {
     return;
   }
 
-  // 盤上の駒を選択・移動（編集モードなので単純に移動）
+  // 盤上の駒を移動（編集モード）
   if (state.selectedCell) {
     const from = state.selectedCell;
+    if (from.row === row && from.col === col) {
+      // 同じマスを再クリック → 選択解除
+      state.selectedCell = null;
+      updateSelectionHighlight();
+      return;
+    }
+    if (isKingCell(row, col)) {
+      // 玉マスへの移動禁止
+      state.selectedCell = null;
+      updateSelectionHighlight();
+      return;
+    }
     const fromPiece = state.board.board[from.row][from.col];
     if (fromPiece) {
-      // 移動先の駒があれば持ち駒（攻め方）に戻す
-      if (currentPiece) {
-        // 単純な盤面編集なので持ち駒管理はスキップ
-      }
       state.board.board[row][col] = fromPiece;
       state.board.board[from.row][from.col] = null;
     }
@@ -194,18 +270,18 @@ function onCellClick(row, col) {
     return;
   }
 
-  // 駒を選択
-  if (currentPiece) {
+  // 駒を選択（玉マスは選択不可）
+  if (currentPiece && !isKingCell(row, col)) {
     state.selectedCell = { row, col };
     updateSelectionHighlight();
   }
 }
 
-// 右クリックで駒削除（持ち駒に戻す）
+// 右クリックで駒削除（玉マスは削除不可）
 function onCellRightClick(row, col) {
+  if (isKingCell(row, col)) return;
   const piece = state.board.board[row][col];
   if (piece) {
-    // 攻め方の駒は持ち駒に戻す（成り前に戻す）
     if (piece.owner === 'attacker') {
       const basePiece = IS_PROMOTED.has(piece.piece)
         ? { TO:'FU', NY:'KY', NK:'KE', NG:'GI', UM:'KA', RY:'HI' }[piece.piece]
@@ -219,7 +295,8 @@ function onCellRightClick(row, col) {
   }
 }
 
-// 盤面変更後の処理
+// ========== 状態変化後の処理 ==========
+
 function onBoardChanged() {
   state.solution = null;
   state.solveStatus = 'idle';
@@ -232,16 +309,12 @@ function onBoardChanged() {
 }
 
 function updateSelectionHighlight() {
-  document.querySelectorAll('.cell').forEach(cell => {
-    cell.classList.remove('selected-cell');
-  });
+  document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('selected-cell'));
   if (state.selectedCell) {
     const idx = state.selectedCell.row * 9 + state.selectedCell.col;
     const cells = document.querySelectorAll('.cell');
     if (cells[idx]) cells[idx].classList.add('selected-cell');
   }
-
-  // パレット選択ハイライト
   document.querySelectorAll('.palette-piece').forEach(el => el.classList.remove('selected'));
 }
 
@@ -255,7 +328,8 @@ function updateSolveStatus(msg) {
   }
 }
 
-// 解の手順を文字列にフォーマット
+// ========== 手順フォーマット ==========
+
 function formatSolution(moves) {
   if (!moves || moves.length === 0) return '';
   return moves.map((m, i) => {
@@ -268,33 +342,65 @@ function formatSolution(moves) {
   }).join(' ');
 }
 
-// イベントリスナー
+// ========== イベントリスナー ==========
+
 function attachEventListeners() {
+  // ティア選択ボタン
+  document.querySelectorAll('.tier-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tier = parseInt(btn.dataset.tier);
+      startGame(tier);
+    });
+  });
+
+  // 玉の再配置ボタン
+  document.getElementById('reroll-btn').addEventListener('click', () => {
+    if (confirm('玉の位置を再配置しますか？（攻め駒は保持されます）')) {
+      rerollKing();
+    }
+  });
+
+  // ティア変更ボタン
+  document.getElementById('change-tier-btn').addEventListener('click', () => {
+    showTierSelect();
+  });
+
   // 詰み確認ボタン
   document.getElementById('solve-btn').addEventListener('click', () => {
     state.solveStatus = 'solving';
     updateSolveStatus('探索中...');
     document.getElementById('submit-btn').disabled = true;
-
     state.board.turn = 'attacker';
     const sfen = state.board.toSFEN();
     state.worker.postMessage({ type: 'solve', boardState: sfen, maxDepth: 9 });
   });
 
-  // クリアボタン
+  // クリアボタン（玉は保持、攻め駒のみ削除）
   document.getElementById('clear-btn').addEventListener('click', () => {
-    if (confirm('盤面をクリアしますか？')) {
-      state.board = new ShogiBoard();
+    if (confirm('攻め駒をクリアしますか？（玉の位置は保持されます）')) {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (!isKingCell(r, c)) {
+            const piece = state.board.board[r][c];
+            if (piece?.owner === 'attacker') {
+              state.board.board[r][c] = null;
+            } else if (piece?.owner === 'defender' && piece.piece !== 'OU') {
+              state.board.board[r][c] = null;
+            }
+          }
+        }
+      }
+      state.board.hands = { attacker: {}, defender: {} };
       onBoardChanged();
     }
   });
 
-  // 投稿フォームのsubmit前処理（htmxイベント）
-  // htmx:configRequest 時点でパラメータを直接上書きする
+  // 投稿フォームのsubmit前処理
   document.getElementById('submit-form').addEventListener('htmx:configRequest', (e) => {
     e.detail.parameters['board_sfen'] = state.board.toSFEN();
     e.detail.parameters['solution_moves'] = JSON.stringify(state.solution || []);
     e.detail.parameters['moves_count'] = state.solution ? state.solution.length : 0;
+    e.detail.parameters['tier'] = state.tier || 1;
   });
 }
 
