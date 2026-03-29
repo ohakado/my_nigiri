@@ -36,6 +36,11 @@ function createWorker() {
       state.solution = moves;
       state.solveStatus = 'found';
       updateSolveStatus(`${movesCount}手詰め！解が見つかりました。`);
+      // 解が確定した時点でフォームの hidden input を直接セット
+      document.getElementById('input-board-sfen').value = state.board.toSFEN();
+      document.getElementById('input-solution-moves').value = JSON.stringify(moves);
+      document.getElementById('input-moves-count').value = moves.length;
+      document.getElementById('input-tier').value = state.tier || 1;
       document.getElementById('submit-btn').disabled = false;
       document.getElementById('solution-display').textContent = formatSolution(moves);
     } else {
@@ -395,13 +400,6 @@ function attachEventListeners() {
     }
   });
 
-  // 投稿フォームのsubmit前処理
-  document.getElementById('submit-form').addEventListener('htmx:configRequest', (e) => {
-    e.detail.parameters['board_sfen'] = state.board.toSFEN();
-    e.detail.parameters['solution_moves'] = JSON.stringify(state.solution || []);
-    e.detail.parameters['moves_count'] = state.solution ? state.solution.length : 0;
-    e.detail.parameters['tier'] = state.tier || 1;
-  });
 }
 
 // DOMContentLoaded で初期化
