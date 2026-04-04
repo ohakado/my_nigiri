@@ -11,18 +11,17 @@ header nav a:hover { text-decoration: underline; }
 
 .game-area { display: flex; gap: 20px; align-items: flex-start; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
 
-/* 駒パレット */
-.piece-palette {
+/* 統一駒箱 */
+#piece-box {
   background: #8b6914;
   border-radius: 8px;
   padding: 12px;
   min-width: 120px;
 }
-.piece-palette h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
-.palette-section { margin-bottom: 12px; }
-.palette-section label { color: #ddd; font-size: 0.8rem; display: block; margin-bottom: 4px; }
-.palette-pieces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.palette-piece {
+#piece-box h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
+.piece-box-hint { color: #ddd; font-size: 0.72rem; line-height: 1.5; }
+#piece-box-pieces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }
+.piece-box-item {
   width: 36px; height: 36px;
   background: #f5deb3;
   border: 1px solid #8b7355;
@@ -32,11 +31,25 @@ header nav a:hover { text-decoration: underline; }
   font-size: 0.75rem;
   font-weight: bold;
   user-select: none;
+  position: relative;
   transition: background 0.15s;
+  opacity: 0.5;
 }
-.palette-piece:hover { background: #ffe4b5; }
-.palette-piece.defender-piece { transform: rotate(180deg); background: #ffc0cb; }
-.palette-piece.selected { outline: 3px solid #0066cc; }
+.piece-box-item:hover { background: #ffe4b5; opacity: 1; }
+.piece-box-item.has-remaining { opacity: 1; background: #fff8dc; border-color: #cc6600; }
+.piece-box-item.selected { outline: 3px solid #0066cc; background: #cce5ff; opacity: 1; }
+.piece-remaining-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: #cc2200;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: bold;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
 
 /* 将棋盤 */
 .board-wrapper {
@@ -92,34 +105,80 @@ header nav a:hover { text-decoration: underline; }
 .piece.defender { color: #1a1a1a; transform: rotate(180deg); }
 .piece.promoted { color: #cc0000; }
 
-/* 持ち駒 */
-.hand-area {
-  background: #8b6914;
+/* 右パネル（後手の駒台上 + 先手の駒台下） */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  align-self: stretch;
+}
+
+/* 先手の駒台 */
+#attacker-hand {
+  background: #6b4b14;
   border-radius: 8px;
   padding: 12px;
   min-width: 120px;
-  min-height: 200px;
 }
-.hand-area h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
-.hand-pieces-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.hand-piece {
+#attacker-hand h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
+#attacker-hand-pieces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }
+.attacker-hand-item {
   width: 36px; height: 36px;
   background: #f5deb3;
-  border: 1px solid #8b7355;
+  border: 2px solid #cc8800;
   border-radius: 4px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem;
   font-weight: bold;
   position: relative;
+  user-select: none;
+  transition: background 0.15s;
 }
-.hand-piece .count {
-  position: absolute;
-  bottom: 1px;
-  right: 2px;
-  font-size: 0.6rem;
-  color: #555;
+.attacker-hand-item:hover { background: #ffe4b5; }
+.attacker-hand-item.selected { outline: 3px solid #0066cc; background: #cce5ff; }
+
+/* 後手の駒台 */
+#defender-hand {
+  background: #3a2a5a;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 120px;
 }
+#defender-hand h3 { color: #f5deb3; text-align: center; margin-bottom: 8px; font-size: 0.9rem; }
+#defender-hand-pieces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 4px; }
+.defender-hand-item {
+  width: 36px; height: 36px;
+  background: #ffc0cb;
+  border: 2px solid #9060a0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  position: relative;
+  transform: rotate(180deg);
+  user-select: none;
+  transition: background 0.15s;
+}
+.defender-hand-item:hover { background: #ffb0d8; }
+.defender-hand-item.selected { outline: 3px solid #cc00ff; background: #eeb0ff; }
+
+/* 駒箱の残り枚数ラベル */
+.pool-label { font-size: 0.8rem; text-align: center; margin: 4px 0; }
+
+/* ゲーム情報バー */
+.game-info-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-bottom: 12px;
+  color: #f5deb3;
+  font-weight: bold;
+}
+.remaining-label { font-size: 0.95rem; }
 
 /* コントロール */
 .controls {
@@ -210,16 +269,6 @@ button:hover { opacity: 0.85; }
 .tier-range { font-size: 0.85rem; opacity: 0.9; }
 .tier-bonus-label { font-size: 0.8rem; opacity: 0.8; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; }
 
-/* ティア情報バー */
-.tier-info-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  background: rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 8px 16px;
-  margin-bottom: 12px;
-  color: #f5deb3;
-  font-weight: bold;
-}
 .small-btn {
   padding: 6px 12px;
   font-size: 0.85rem;

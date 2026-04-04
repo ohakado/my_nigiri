@@ -13,68 +13,40 @@
   <div class="app-container">
     <header>
       <h1>握り詰め</h1>
-      <p>詰将棋を作って投稿しよう（最大9手）</p>
+      <p>ランダムに配られた駒を全て使って詰将棋を作ろう（最大9手）</p>
       <nav>
         <a href="/">作成</a>
         <a href="/ranking">ランキング</a>
       </nav>
     </header>
 
-    <!-- ========== ティア選択画面 ========== -->
-    <div id="tier-select-screen">
-      <div class="tier-select-container">
-        <h2>ティアを選択してください</h2>
-        <p class="tier-desc">相手玉の配置範囲を選びます。ティアが高いほど難しく、高得点！</p>
-        <div class="tier-buttons">
-          <button class="tier-btn tier1-btn" data-tier="1">
-            <span class="tier-name">ティア1</span>
-            <span class="tier-range">玉の位置：1〜3段目</span>
-            <span class="tier-bonus-label">ボーナス +0点</span>
-          </button>
-          <button class="tier-btn tier2-btn" data-tier="2">
-            <span class="tier-name">ティア2</span>
-            <span class="tier-range">玉の位置：1〜6段目</span>
-            <span class="tier-bonus-label">ボーナス +30点</span>
-          </button>
-          <button class="tier-btn tier3-btn" data-tier="3">
-            <span class="tier-name">ティア3</span>
-            <span class="tier-range">玉の位置：1〜9段目</span>
-            <span class="tier-bonus-label">ボーナス +70点</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- ========== ゲーム画面 ========== -->
-    <div id="game-screen" style="display:none;">
+    <div id="game-screen">
 
-      <!-- ティア情報バー -->
-      <div class="tier-info-bar">
-        <span id="current-tier-label"></span>
+      <!-- 情報バー -->
+      <div class="game-info-bar">
+        <span id="remaining-label" class="remaining-label"></span>
         <div style="display:flex; gap:8px;">
+          <button id="reroll-pieces-btn" class="small-btn">🀄 握り直す</button>
           <button id="reroll-btn" class="small-btn">🎲 玉を再配置</button>
-          <button id="change-tier-btn" class="small-btn">↩ ティア変更</button>
         </div>
       </div>
 
       <!-- ゲームエリア -->
       <div class="game-area">
-        <!-- 駒パレット -->
-        <div class="piece-palette">
-          <h3>駒パレット</h3>
-          <div class="palette-section">
-            <label>▲ 攻め方</label>
-            <div class="palette-pieces" id="palette-attacker"></div>
-          </div>
-          <div class="palette-section">
-            <label>△ 受け方（玉以外）</label>
-            <div class="palette-pieces" id="palette-defender"></div>
-          </div>
+
+        <!-- 駒箱（ランダム駒プール） -->
+        <div id="piece-box">
+          <h3>駒箱</h3>
+          <div id="piece-box-pieces"></div>
+          <p id="pool-remaining-label" class="pool-label"></p>
           <hr style="border-color:#a08040; margin: 8px 0;">
-          <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
-            クリック→盤面クリックで配置<br>
-            右クリックで駒削除<br>
-            <span style="color:#ffdd88;">👑 玉は移動不可</span>
+          <p class="piece-box-hint">
+            🔴数字＝残り枚数<br>
+            クリックで選択→盤面へ<br>
+            配置後クリックで状態循環:<br>
+            <span style="color:#ffdd88;">先手→成→後手→成→先手…</span><br>
+            右クリックで手駒に戻す
           </p>
         </div>
 
@@ -107,21 +79,41 @@
           </div>
         </div>
 
-        <!-- 持ち駒エリア（攻め方） -->
-        <div class="hand-area">
-          <h3>▲ 持ち駒</h3>
-          <div class="hand-pieces-grid" id="hand-pieces-attacker"></div>
-          <hr style="border-color:#a08040; margin: 8px 0;">
-          <p style="color:#ddd; font-size:0.75rem; line-height:1.4;">
-            持ち駒をクリック→<br>盤面に打てます
-          </p>
-        </div>
-      </div>
+        <!-- 右パネル：後手の駒台（上）＋ 先手の駒台（下） -->
+        <div class="right-panel">
+
+          <!-- △ 後手の駒台 -->
+          <div id="defender-hand">
+            <h3>△ 後手の駒台</h3>
+            <div id="defender-hand-pieces"></div>
+            <p id="defender-hand-empty" class="piece-box-hint" style="color:#aaa;">なし</p>
+            <hr style="border-color:#a08040; margin: 8px 0;">
+            <p class="piece-box-hint">
+              クリックで選択→盤面へ<br>
+              右クリックで駒箱に戻す
+            </p>
+          </div>
+
+          <!-- ▲ 先手の駒台 -->
+          <div id="attacker-hand">
+            <h3>▲ 先手の駒台</h3>
+            <div id="attacker-hand-pieces"></div>
+            <p id="attacker-hand-empty" class="piece-box-hint" style="color:#aaa;">なし</p>
+            <hr style="border-color:#a08040; margin: 8px 0;">
+            <p class="piece-box-hint">
+              クリックで選択→盤面へ<br>
+              右クリックで駒箱に戻す
+            </p>
+          </div>
+
+        </div><!-- /right-panel -->
+
+      </div><!-- /game-area -->
 
       <!-- 操作エリア -->
       <div class="controls">
         <button id="solve-btn">🔍 詰みを確認</button>
-        <button id="clear-btn">🗑 攻め駒クリア</button>
+        <button id="clear-btn">🗑 盤面リセット</button>
       </div>
 
       <div id="solve-status"></div>
@@ -138,7 +130,7 @@
           <input type="hidden" id="input-board-sfen" name="board_sfen">
           <input type="hidden" id="input-solution-moves" name="solution_moves">
           <input type="hidden" id="input-moves-count" name="moves_count">
-          <input type="hidden" id="input-tier" name="tier">
+          <input type="hidden" id="input-tier" name="tier" value="1">
           <button type="submit" id="submit-btn" disabled>📮 投稿する</button>
         </form>
       </div>
